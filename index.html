@@ -9,7 +9,7 @@
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: linear-gradient(160deg, #1a56c4, #2f76e8);
+    background: #f5f5f5;
     color: #1a1a1a;
     display: flex;
     align-items: center;
@@ -19,44 +19,40 @@
   }
   .card {
     background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
     max-width: 420px;
     width: 100%;
-    padding: 32px 26px;
+    padding: 28px 24px;
     text-align: center;
   }
   h1 { font-size: 20px; margin: 0 0 12px; }
   p { font-size: 15px; line-height: 1.5; color: #444; margin: 0 0 20px; }
   label {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 15px;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.5;
     text-align: left;
-    background: #eaf1fd;
-    border: 1px solid #cfe0fb;
+    background: #f0f0f0;
     border-radius: 8px;
     padding: 14px 16px;
-    margin-bottom: 20px;
     cursor: pointer;
   }
-  input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; accent-color: #1a56c4; }
+  input[type="checkbox"] { width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; }
+  .muted { color: #666; font-size: 13px; margin-top: 14px; margin-bottom: 0; }
+  .spinner { color: #666; font-size: 15px; }
   button {
-    width: 100%;
-    padding: 15px;
-    font-size: 16px;
-    font-weight: 700;
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: 600;
     border: none;
     border-radius: 8px;
-    background: #f4b400;
-    color: #1a1a1a;
+    background: #1a73e8;
+    color: #fff;
     cursor: pointer;
   }
-  button:hover:not(:disabled) { background: #e0a600; }
-  button:disabled { background: #f7dfa1; color: #8a7548; cursor: default; }
-  .muted { color: #666; font-size: 14px; }
-  .spinner { color: #666; font-size: 15px; }
 </style>
 </head>
 <body>
@@ -78,10 +74,10 @@
     render(`<h1>Texting Preferences</h1><p>${message}</p>`);
   }
 
-  function renderThankYou(consented) {
+  function renderThankYou() {
     render(`
       <h1>Thanks!</h1>
-      <p>${consented ? "You're all set — we'll keep you posted by text." : "Got it — we won't text you."}</p>
+      <p>You're all set — we'll keep you posted by text.</p>
     `);
   }
 
@@ -99,28 +95,28 @@
     return res.json();
   }
 
+  // No Submit button — checking the box IS the action. Nothing on this
+  // page ever records a "no": leaving it unchecked, or just closing the
+  // tab, simply leaves your preference as it was.
   function renderForm(firstName, alreadyResponded) {
-    const greeting = firstName ? `Hi ${firstName} — ` : '';
+    const greeting = firstName ? `Hi ${firstName} — ` : "Hi there — ";
     render(`
       <h1>Texting Preferences</h1>
-      <p>${greeting}check the box below if you'd like to receive texts from us.</p>
+      <p>${greeting}check the box below any time you'd like to start getting texts from us.</p>
       <label>
         <input type="checkbox" id="consent-box" />
-        Yes, text me
+        <span>By checking this box, I agree to receive text messages from us at the number provided. Message and data rates may apply. Reply STOP at any time to stop.</span>
       </label>
-      ${alreadyResponded ? '<p class="muted">You\'ve already responded before — submitting again just updates your preference.</p>' : ''}
-      <button id="submit-btn">Submit</button>
+      ${alreadyResponded ? '<p class="muted">You\'ve already opted in before — checking this again just reconfirms it.</p>' : ''}
     `);
 
-    document.getElementById('submit-btn').addEventListener('click', async () => {
-      const btn = document.getElementById('submit-btn');
-      const consented = document.getElementById('consent-box').checked;
-      btn.disabled = true;
-      btn.textContent = 'Submitting…';
+    document.getElementById('consent-box').addEventListener('change', async (e) => {
+      if (!e.target.checked) return;
+      e.target.disabled = true;
       try {
-        await callRpc('record_opt_in_response', { p_token: token, p_consent: consented });
-        renderThankYou(consented);
-      } catch (e) {
+        await callRpc('record_opt_in_response', { p_token: token, p_consent: true });
+        renderThankYou();
+      } catch (err) {
         render(`
           <h1>Texting Preferences</h1>
           <p>Something went wrong submitting that. Please try again.</p>
